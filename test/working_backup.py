@@ -1,6 +1,5 @@
 import sys
 import os
-import datetime
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -12,8 +11,6 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QTableWidgetItem,
     QMenu,
-    QFileDialog,
-    QMessageBox,
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor
@@ -94,14 +91,12 @@ class TableApp(QMainWindow):
         actionButtonLayout = QHBoxLayout()
 
         self.saveButton = QPushButton("Save")
-        self.saveButton.clicked.connect(self.save_state)
         actionButtonLayout.addWidget(self.saveButton)
 
         self.loadButton = QPushButton("Load Data")
-        self.loadButton.clicked.connect(self.load_state)
         actionButtonLayout.addWidget(self.loadButton)
 
-        self.deselectAllButton = QPushButton("Clean")
+        self.deselectAllButton = QPushButton("Alles Abwählen")
         self.deselectAllButton.clicked.connect(self.deselect_all)
         actionButtonLayout.addWidget(self.deselectAllButton)
 
@@ -109,7 +104,7 @@ class TableApp(QMainWindow):
 
     def header_menu(self, index):
         menu = QMenu(self)
-        select_all_action = menu.addAction("Select All")
+        select_all_action = menu.addAction("Alles auswählen")
 
         action = menu.exec_(QCursor.pos())
         if action == select_all_action:
@@ -208,9 +203,7 @@ class TableApp(QMainWindow):
                         if checkbox.isChecked():
                             all_unchecked_prev_row = False
                             break
-                prev_row_item = self.table.item(
-                    row-2, 6) if row-2 >= 0 else None
-                if all_unchecked_prev_row and prev_row_item and prev_row_item.text() == "0":
+                if all_unchecked_prev_row and self.table.item(row-2, 6).text() == "0":
                     self.table.item(row - 1, 6).setText("0")
                     for c in range(2, 6):
                         checkbox_widget = self.table.cellWidget(row - 1, c)
@@ -239,7 +232,7 @@ class TableApp(QMainWindow):
 
     def deselect_all(self):
         for row in range(self.table.rowCount()):
-            for col in range(self.table.columnCount()):
+            for col in range(6):
                 checkbox_widget = self.table.cellWidget(row, col)
                 if checkbox_widget:
                     checkbox = checkbox_widget.layout().itemAt(0).widget()
@@ -258,109 +251,6 @@ class TableApp(QMainWindow):
                     checkbox = checkbox_widget.layout().itemAt(0).widget()
                     if checkbox.isEnabled():
                         checkbox.setChecked(True)
-
-    def save_state(self):
-        options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getSaveFileName(
-            self, "Save File", "", "Text Files (*.txt);;All Files (*)", options=options
-        )
-        if fileName:
-            try:
-                # Save the .txt file
-                with open(fileName, "w") as file:
-                    for row in range(self.table.rowCount()):
-                        states = []
-                        # Exclude the lock column
-                        for col in range(self.table.columnCount() - 1):
-                            checkbox_widget = self.table.cellWidget(row, col)
-                            if checkbox_widget:
-                                checkbox = checkbox_widget.layout().itemAt(0).widget()
-                                states.append(checkbox.isChecked())
-                        if any(states):
-                            file.write(f"{row + 1}: {states}\n")
-
-                QMessageBox.information(
-                    self, "Success", "File saved successfully.")
-
-                # Generate the .par file
-                base_name = os.path.splitext(fileName)[0]
-                current_date = datetime.datetime.now().strftime("%d_%m_%Y")
-                par_file_name = f"{base_name}_{current_date}.par"
-                self.generate_par_file(par_file_name)
-
-            except Exception as e:
-                QMessageBox.critical(
-                    self, "Error", f"Could not save file: {e}")
-
-    def generate_par_file(self, par_file_name):
-        data = {
-            "Name": ["BK-M-K", "BK-2M-K", "BK-2DO", "BK-2DI", "BK-4DO", "BK-4DI"],
-            "Adresse/R1": [True, True, True, False, True, False],
-            "Adresse/R2": [False, True, True, False, True, False],
-            "Adresse/R3": [False, False, False, False, True, False],
-            "Adresse/R4": [False, False, False, False, True, False],
-            "Adresse/1": [True, True, False, True, False, True],
-            "Adresse/2": [False, True, False, True, False, True],
-            "Adresse/3": [False, True, False, False, False, True],
-            "Adresse/4": [True, True, False, False, False, True],
-            "Adresse+1/1": [False, False, True, False, True, False],
-            "Adresse+1/2": [False, False, True, False, True, False],
-            "Adresse+1/3": [False, False, False, False, True, False],
-            "Adresse+1/4": [False, False, False, False, True, False]
-        }
-
-        try:
-            with open(par_file_name, "w", encoding="utf-8") as file:
-                current_address = None
-                for row in range(self.table.rowCount()):
-                    # Exclude the lock column
-                    for col in range(self.table.columnCount() - 1):
-                        checkbox_widget = self.table.cellWidget(row, col)
-                        if checkbox_widget:
-                            checkbox = checkbox_widget.layout().itemAt(0).widget()
-                            if checkbox.isChecked():
-                                adresse = row + 1
-                                for key, values in data.items():
-                                    if key != "Name" and values[col]:
-                                        if "+1" in key:
-                                            address_value = key.replace(
-                                                "Adresse+1", str(adresse + 1))
-                                        else:
-                                            address_value = key.replace(
-                                                "Adresse", str(adresse))
-                                        if current_address and current_address != adresse:
-                                            file.write("\n")
-                                        file.write(f".{address_value};\n")
-                                        current_address = adresse
-
-            QMessageBox.information(
-                self, "Success", "PAR file generated successfully.")
-        except Exception as e:
-            QMessageBox.critical(
-                self, "Error", f"Could not generate PAR file: {e}")
-
-    def load_state(self):
-        options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(
-            self, "Load File", "", "Text Files (*.txt);;All Files (*)", options=options
-        )
-        if fileName:
-            try:
-                with open(fileName, "r") as file:
-                    for line in file:
-                        parts = line.strip().split(": ")
-                        row = int(parts[0]) - 1
-                        states = eval(parts[1])
-                        for col in range(len(states)):
-                            checkbox_widget = self.table.cellWidget(row, col)
-                            if checkbox_widget:
-                                checkbox = checkbox_widget.layout().itemAt(0).widget()
-                                checkbox.setChecked(states[col])
-                QMessageBox.information(
-                    self, "Success", "File loaded successfully.")
-            except Exception as e:
-                QMessageBox.critical(
-                    self, "Error", f"Could not load file: {e}")
 
 
 if __name__ == "__main__":

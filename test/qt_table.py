@@ -208,9 +208,7 @@ class TableApp(QMainWindow):
                         if checkbox.isChecked():
                             all_unchecked_prev_row = False
                             break
-                prev_row_item = self.table.item(
-                    row-2, 6) if row-2 >= 0 else None
-                if all_unchecked_prev_row and prev_row_item and prev_row_item.text() == "0":
+                if all_unchecked_prev_row and self.table.item(row-2, 6).text() == "0":
                     self.table.item(row - 1, 6).setText("0")
                     for c in range(2, 6):
                         checkbox_widget = self.table.cellWidget(row - 1, c)
@@ -239,7 +237,7 @@ class TableApp(QMainWindow):
 
     def deselect_all(self):
         for row in range(self.table.rowCount()):
-            for col in range(self.table.columnCount()):
+            for col in range(6):
                 checkbox_widget = self.table.cellWidget(row, col)
                 if checkbox_widget:
                     checkbox = checkbox_widget.layout().itemAt(0).widget()
