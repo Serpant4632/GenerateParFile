@@ -3,7 +3,8 @@ setlocal
 
 :: Define the paths and names
 set SCRIPT_NAME=app.py
-set EXE_NAME="app.exe"
+set FILE_NAME="D&S ParGenerator"
+set EXE_NAME=%FILE_NAME%&".exe"
 set DIST_DIR="%~dp0dist"
 set TARGET_PATH=%DIST_DIR%\%EXE_NAME%
 set SHORTCUT_NAME="D&S ParGenerator.lnk"
@@ -11,7 +12,7 @@ set DESKTOP_PATH="%USERPROFILE%\Desktop"
 
 :: Step 1: Package the application with PyInstaller
 echo Packaging the application with PyInstaller...
-pyinstaller --onefile %SCRIPT_NAME%
+pyinstaller --onefile --windowed %SCRIPT_NAME% --name=%FILE_NAME%
 if %ERRORLEVEL% NEQ 0 (
     echo PyInstaller failed. Exiting.
     exit /b 1
