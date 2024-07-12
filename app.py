@@ -2,6 +2,10 @@ import sys
 import os
 import datetime
 import json
+
+# Import for side effects: registers the cleanup function to be called on exit
+import utils.cleanup  # noqa: F401
+
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
