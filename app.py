@@ -16,7 +16,10 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QCursor
+from PyQt5.QtGui import QCursor, QIcon
+
+
+basedir = os.path.dirname(__file__)
 
 
 class TableApp(QMainWindow):
@@ -94,14 +97,20 @@ class TableApp(QMainWindow):
         actionButtonLayout = QHBoxLayout()
 
         self.saveButton = QPushButton("Save")
+        self.saveButton.setIcon(
+            QIcon(os.path.join(basedir, "icons", "speichern.png")))
         self.saveButton.clicked.connect(self.save_state)
         actionButtonLayout.addWidget(self.saveButton)
 
         self.loadButton = QPushButton("Load Data")
+        self.loadButton.setIcon(
+            QIcon(os.path.join(basedir, "icons", "ordner-speichern.png")))
         self.loadButton.clicked.connect(self.load_state)
         actionButtonLayout.addWidget(self.loadButton)
 
         self.deselectAllButton = QPushButton("Clean")
+        self.deselectAllButton.setIcon(
+            QIcon(os.path.join(basedir, "icons", "loschen.png")))
         self.deselectAllButton.clicked.connect(self.deselect_all)
         actionButtonLayout.addWidget(self.deselectAllButton)
 
