@@ -2,6 +2,10 @@ import atexit
 import os
 import shutil
 import tempfile
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def cleanup():
@@ -12,8 +16,9 @@ def cleanup():
         if folder_name.startswith("_MEI"):
             try:
                 shutil.rmtree(folder_path)
+                logger.info(f"Removed temporary directory: {folder_path}")
             except Exception as e:
-                print(f"Failed to remove {folder_path}: {e}")
+                logger.error(f"Failed to remove {folder_path}: {e}")
 
 
 # Register the cleanup function to be called on exit
