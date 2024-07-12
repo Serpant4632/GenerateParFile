@@ -1,6 +1,7 @@
 import sys
 import os
 import datetime
+import json
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -20,6 +21,12 @@ from PyQt5.QtGui import QCursor, QIcon
 
 
 basedir = os.path.dirname(__file__)
+
+
+def load_data(json_file):
+    with open(json_file, 'r') as file:
+        data = json.load(file)
+    return data
 
 
 class TableApp(QMainWindow):
@@ -302,23 +309,11 @@ class TableApp(QMainWindow):
                     self, "Error", f"Could not save file: {e}")
 
     def generate_par_file(self, par_file_name):
-        data = {
-            "Name": ["BK-M-K", "BK-2M-K", "BK-2DO", "BK-2DI", "BK-4DO", "BK-4DI"],
-            "Adresse/R1": [True, True, True, False, True, False],
-            "Adresse/R2": [False, True, True, False, True, False],
-            "Adresse/R3": [False, False, False, False, True, False],
-            "Adresse/R4": [False, False, False, False, True, False],
-            "Adresse/1": [True, True, False, True, False, True],
-            "Adresse/2": [False, True, False, True, False, True],
-            "Adresse/3": [False, True, False, False, False, True],
-            "Adresse/4": [True, True, False, False, False, True],
-            "Adresse+1/1": [False, False, True, False, True, False],
-            "Adresse+1/2": [False, False, True, False, True, False],
-            "Adresse+1/3": [False, False, False, False, True, False],
-            "Adresse+1/4": [False, False, False, False, True, False]
-        }
-
         try:
+            # Load the JSON data
+            D_And_S_Data = load_data(
+                os.path.join(basedir, "data", "DSdata.json"))
+
             with open(par_file_name, "w", encoding="utf-8") as file:
                 current_address = None
                 for row in range(self.table.rowCount()):
@@ -329,8 +324,8 @@ class TableApp(QMainWindow):
                             checkbox = checkbox_widget.layout().itemAt(0).widget()
                             if checkbox.isChecked():
                                 adresse = row + 1
-                                for key, values in data.items():
-                                    if key != "Name" and values[col]:
+                                for key, value in D_And_S_Data[col].items():
+                                    if key != "Name" and value:
                                         if "+1" in key:
                                             address_value = key.replace(
                                                 "Adresse+1", str(adresse + 1))
