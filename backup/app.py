@@ -2,6 +2,10 @@ import sys
 import os
 import datetime
 import json
+
+# Import for side effects: registers the cleanup function to be called on exit
+import utils.cleanup  # noqa: F401
+
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -311,37 +315,54 @@ class TableApp(QMainWindow):
     def generate_par_file(self, par_file_name):
         try:
             # Load the JSON data
-            D_And_S_Data = load_data(
-                os.path.join(basedir, "data", "DSdata.json"))
+            D_And_S_Data = load_data(os.path.join(
+                basedir, "data", "DSdata.json"))
 
             with open(par_file_name, "w", encoding="utf-8") as file:
-                current_address = None
-                for row in range(self.table.rowCount()):
-                    # Exclude the lock column
-                    for col in range(self.table.columnCount() - 1):
-                        checkbox_widget = self.table.cellWidget(row, col)
-                        if checkbox_widget:
-                            checkbox = checkbox_widget.layout().itemAt(0).widget()
-                            if checkbox.isChecked():
-                                adresse = row + 1
-                                for key, value in D_And_S_Data[col].items():
-                                    if key != "Name" and value:
-                                        if "+1" in key:
-                                            address_value = key.replace(
-                                                "Adresse+1", str(adresse + 1))
-                                        else:
-                                            address_value = key.replace(
-                                                "Adresse", str(adresse))
-                                        if current_address and current_address != adresse:
-                                            file.write("\n")
-                                        file.write(f".{address_value};\n")
-                                        current_address = adresse
+                self._write_par_file(file, D_And_S_Data)
 
             QMessageBox.information(
                 self, "Success", "PAR file generated successfully.")
+
         except Exception as e:
             QMessageBox.critical(
                 self, "Error", f"Could not generate PAR file: {e}")
+
+    def _write_par_file(self, file, D_And_S_Data):
+        current_address = None
+        current_row = None
+        for row in range(self.table.rowCount()):
+            for col in range(self.table.columnCount() - 1):
+                if self._is_checkbox_checked(row, col):
+                    adresse = row + 1
+                    self._write_address(
+                        file, D_And_S_Data[col], adresse, current_address, row, current_row)
+                    current_address = adresse
+                    current_row = row
+
+    def _is_checkbox_checked(self, row, col):
+        checkbox_widget = self.table.cellWidget(row, col)
+        if checkbox_widget:
+            checkbox = checkbox_widget.layout().itemAt(0).widget()
+            return checkbox.isChecked()
+        return False
+
+    def _write_address(self, file, data, adresse, current_address, row, current_row):
+        if current_address != adresse and (current_row != row and row != 0):
+            file.write(f"\n")
+            current_address = adresse
+            current_row = row
+
+        for key, value in data.items():
+            if key != "Name" and value:
+                address_value = self._get_address_value(key, adresse)
+                file.write(f".{adresse}/{address_value};\n")
+
+    def _get_address_value(self, key, adresse):
+        if "+1" in key:
+            return key.replace("Adresse+1", str(adresse + 1))
+        else:
+            return key.replace("Adresse", str(adresse))
 
     def load_state(self):
         options = QFileDialog.Options()
